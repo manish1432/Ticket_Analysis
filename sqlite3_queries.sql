@@ -36,3 +36,9 @@ GROUP BY
     ServiceIssue
 ORDER BY
     IssueCount DESC;
+
+--Utilization
+SELECT Assignee, SUM(TimeSpent) AS TotalTimeSpent
+FROM ServiceDesk
+GROUP BY Assignee
+ORDER BY TotalTimeSpent DESC;

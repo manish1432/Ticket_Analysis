@@ -3383,3 +3383,28 @@ WARNING:werkzeug: * Debugger is active!
 INFO:werkzeug: * Debugger PIN: 103-715-190
 INFO:werkzeug:127.0.0.1 - - [15/May/2024 09:19:14] "POST / HTTP/1.1" 200 -
 INFO:werkzeug:127.0.0.1 - - [15/May/2024 09:19:22] "GET / HTTP/1.1" 200 -
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 103-715-190
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 103-715-190
+INFO:werkzeug:127.0.0.1 - - [17/May/2024 16:22:53] "GET / HTTP/1.1" 200 -
+INFO:werkzeug: * Detected change in 'C:\\Users\\tiwarim\\Downloads\\Power_BI_TCS_IO\\dashboard.py', reloading
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 103-715-190
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug: * Restarting with stat
+WARNING:werkzeug: * Debugger is active!
+INFO:werkzeug: * Debugger PIN: 103-715-190
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:10:02] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:11:12] "POST / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:11:22] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:11:36] "POST / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:11:40] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [18/May/2024 13:12:30] "GET / HTTP/1.1" 200 -

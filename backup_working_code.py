@@ -777,3 +777,837 @@ if __name__ == '__main__':
 </body>
 </html>
 
+# BU wise
+import os
+import sqlite3
+import pandas as pd
+from flask import Flask, render_template, request, jsonify
+import plotly.express as px
+from datetime import datetime
+
+app = Flask(__name__)
+
+# Function to fetch ticket data based on date range and triaged business
+def fetch_ticket_data(triaged_business, start_date=None, end_date=None):
+    conn = sqlite3.connect('io_database.db')
+    
+    if triaged_business == "Technicolor Group":
+        query = """
+            SELECT TriagedBusiness,
+                   ServiceIssue,
+                   COUNT(*) AS IssueCount
+            FROM ServiceDesk
+            WHERE TriagedBusiness IN ('MPC', 'The Mill', 'Technicolor Games', 'Mikros Animation')
+        """
+        params = []
+    else:
+        query = """
+            SELECT TriagedBusiness,
+                   ServiceIssue,
+                   COUNT(*) AS IssueCount
+            FROM ServiceDesk
+            WHERE TriagedBusiness = ?
+        """
+        params = [triaged_business]
+    
+    if start_date and end_date:
+        query += " AND Created BETWEEN ? AND ?"
+        params.extend([start_date, end_date])
+    
+    query += " GROUP BY TriagedBusiness, ServiceIssue ORDER BY IssueCount DESC"
+    
+    df = pd.read_sql_query(query, conn, params=params)
+    conn.close()
+    
+    return df
+
+# Function to fetch the top 10 breakdown data for a specific service issue
+def fetch_breakdown_data(service_issue):
+    conn = sqlite3.connect('io_database.db')
+    query = """
+        SELECT Component,
+               Detail1,
+               COUNT(*) AS Count
+        FROM ServiceDesk
+        WHERE ServiceIssue = ?
+        GROUP BY Component, Detail1
+        ORDER BY Count DESC
+        LIMIT 10
+    """
+    df = pd.read_sql_query(query, conn, params=[service_issue])
+    conn.close()
+    return df
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    triaged_business = request.form.get('triaged_business', 'MPC')  # Default triaged business
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    
+    # Fetch ticket data based on triaged business and date range
+    data = fetch_ticket_data(triaged_business, start_date, end_date)
+    
+    if triaged_business == "Technicolor Group":
+        title = "Issue Distribution for Technicolor Group"
+        fig = px.sunburst(data, path=['TriagedBusiness', 'ServiceIssue'], values='IssueCount',
+                          title=title, color_discrete_sequence=px.colors.qualitative.Pastel)
+        fig.update_traces(textinfo='label+percent root')
+    else:
+        title = f"Issue Distribution for {triaged_business}"
+        fig = px.pie(data, values='IssueCount', names='ServiceIssue', title=title,
+                     color_discrete_sequence=px.colors.qualitative.Pastel, hole=0.4)
+        fig.update_traces(textinfo='percent+label', hoverinfo='label+percent+value')
+    
+    fig.update_layout(
+        title_font_size=24,
+        title_font_family='Arial',
+        showlegend=True,
+        legend_title='Service Issues',
+        legend=dict(font=dict(size=12)),
+        paper_bgcolor='#f8f9fa',
+        plot_bgcolor='#f8f9fa',
+    )
+
+    # Convert Plotly figure to JSON
+    graph_json = fig.to_json()
+
+    # Prepare date range label and total issues count
+    date_range_label = ""
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        date_range_label = f"Data from {start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
+    
+    total_issues = data['IssueCount'].sum()
+
+    issues_data = data.to_dict('records')
+
+    return render_template('bu_wise.html', graph_json=graph_json, 
+                           triaged_business=triaged_business, 
+                           date_range_label=date_range_label, 
+                           total_issues=total_issues, 
+                           issues_data=issues_data)
+
+@app.route('/breakdown', methods=['POST'])
+def breakdown():
+    service_issue = request.form.get('service_issue')
+    breakdown_data = fetch_breakdown_data(service_issue)
+    breakdown_html = breakdown_data.to_html(classes='table table-striped table-bordered', index=False)
+    return breakdown_html
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Distribution by Triaged Business</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            margin-top: 20px;
+            color: #343a40;
+        }
+        .form-row {
+            margin-top: 20px;
+        }
+        .btn-primary {
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        #ticketChart {
+            margin-top: 30px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .table {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ticket Analysis by Business Unit</h1>
+        
+        <!-- Date range selection form -->
+        <form method="POST" action="/">
+            <div class="form-row">
+                <div class="col">
+                    <input type="date" class="form-control" name="start_date" placeholder="Start Date">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control" name="end_date" placeholder="End Date">
+                </div>
+                <div class="col">
+                    <select class="form-control" name="triaged_business">
+                        <option value="MPC">MPC</option>
+                        <option value="The Mill">The Mill</option>
+                        <option value="Technicolor Games">Technicolor Games</option>
+                        <option value="Mikros Animation">Mikros Animation</option>
+                        <option value="Technicolor Group">Technicolor Group (All)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display date range label -->
+        {% if date_range_label %}
+            <h2>{{ date_range_label }}</h2>
+        {% endif %}
+
+        <!-- Display total issues count -->
+        <h3>Total Issues: {{ total_issues }}</h3>
+
+        <!-- Display Plotly pie chart -->
+        <div id="ticketChart"></div>
+
+        <!-- Display issue counts -->
+        <h3>Issue Counts</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Business Unit</th>
+                        <th>Service Issue</th>
+                        <th>Issue Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues_data %}
+                        <tr class="issue-row" data-service-issue="{{ issue['ServiceIssue'] }}">
+                            <td>{{ issue['TriagedBusiness'] }}</td>
+                            <td>{{ issue['ServiceIssue'] }}</td>
+                            <td>{{ issue['IssueCount'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Breakdown Modal -->
+        <div class="modal fade" id="breakdownModal" tabindex="-1" role="dialog" aria-labelledby="breakdownModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="breakdownModalLabel">Breakdown Data</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="breakdownContainer">
+                        <!-- Breakdown data will be appended here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Display Plotly chart
+            var graphJson = {{ graph_json|tojson|safe }};
+            var figure = JSON.parse(graphJson);
+            Plotly.newPlot('ticketChart', figure.data, figure.layout);
+
+            // Handle click on service issue rows to fetch and display breakdown
+            $('.issue-row').click(function() {
+                var serviceIssue = $(this).data('service-issue');
+                $.ajax({
+                    url: '/breakdown',
+                    type: 'POST',
+                    data: { service_issue: serviceIssue },
+                    success: function(response) {
+                        $('#breakdownContainer').html(response);
+                        $('#breakdownModal').modal('show'); // Show the modal
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Bootstrap and jQuery scripts -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+# Utilization
+
+import sqlite3
+import pandas as pd
+from flask import Flask, render_template, request, jsonify
+import plotly.express as px
+from datetime import datetime, timedelta
+
+app = Flask(__name__)
+
+# Function to fetch utilization data based on date range excluding Sundays
+def fetch_utilization_data(start_date=None, end_date=None):
+    conn = sqlite3.connect('io_database.db')
+    
+    query = """
+        SELECT Assignee, SUM(TimeSpent) AS TotalTimeSpent
+        FROM ServiceDesk
+    """
+    
+    # Add date range filter to the query if provided
+    if start_date and end_date:
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)  # Include the end date
+        
+        # Exclude Sundays
+        dates = [start + timedelta(days=i) for i in range((end - start).days) if (start + timedelta(days=i)).weekday() != 6]
+        formatted_dates = [date.strftime("%Y-%m-%d") for date in dates]
+        formatted_start_date = formatted_dates[0]
+        formatted_end_date = formatted_dates[-1]
+        
+        query += f" WHERE Created BETWEEN '{formatted_start_date}' AND '{formatted_end_date}'"
+    
+    query += """
+        GROUP BY Assignee
+        ORDER BY TotalTimeSpent DESC;
+    """
+    
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    
+    # Convert TotalTimeSpent from seconds to hours
+    df['TotalTimeSpentHours'] = df['TotalTimeSpent'] / 3600
+    
+    return df
+
+# Function to fetch breakdown data by TriagedBusiness for a specific engineer
+def fetch_breakdown_data(assignee, start_date=None, end_date=None):
+    conn = sqlite3.connect('io_database.db')
+    
+    query = f"""
+        SELECT TriagedBusiness, COUNT(*) AS IssueCount
+        FROM ServiceDesk
+        WHERE Assignee = '{assignee}'
+    """
+    
+    # Add date range filter to the query if provided
+    if start_date and end_date:
+        query += f" AND Created BETWEEN '{start_date}' AND '{end_date}'"
+    
+    query += """
+        GROUP BY TriagedBusiness
+        ORDER BY IssueCount DESC;
+    """
+    
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    
+    return df
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # Default date range (None if not provided)
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    
+    # Fetch utilization data based on the selected date range
+    data = fetch_utilization_data(start_date, end_date)
+
+    # Calculate total time spent for percentage calculation
+    total_time_spent = data['TotalTimeSpent'].sum()
+
+    # Add a column for percentage utilization
+    data['Percentage'] = (data['TotalTimeSpent'] / total_time_spent) * 100
+
+    # Create a Plotly bar chart
+    fig = px.bar(data, x='Assignee', y='TotalTimeSpentHours',
+                 title='Engineer Utilization',
+                 labels={'Assignee': 'Engineer Name', 'TotalTimeSpentHours': 'Total Utilization (hours)'},
+                 text='Percentage',
+                 hover_data={'Percentage': ':.2f'})
+
+    fig.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis_title='Total Time Spent (hours)')
+
+    # Convert Plotly figure to JSON
+    graph_json = fig.to_json()
+
+    # Convert data to dict for table rendering
+    table_data = data.to_dict('records')
+
+    # Prepare date range label
+    date_range_label = f"Data from {start_date} to {end_date}" if start_date and end_date else "All Data"
+
+    return render_template('index.html', graph_json=graph_json, table_data=table_data, date_range_label=date_range_label, start_date=start_date, end_date=end_date)
+
+@app.route('/breakdown/<assignee>')
+def breakdown(assignee):
+    # Get date range from request args
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Fetch breakdown data for the selected engineer
+    breakdown_data = fetch_breakdown_data(assignee, start_date, end_date)
+
+    # Convert breakdown data to a dictionary for JSON response
+    breakdown_dict = breakdown_data.to_dict('records')
+
+    return jsonify(breakdown_dict)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineer Utilization</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+            padding-top: 50px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #343a40;
+        }
+        #utilizationChart {
+            margin-top: 30px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .table {
+            animation: fadeIn 1s ease-in-out;
+            background-color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .engineer-row {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Engineer Utilization</h1>
+
+        <!-- Date range selection form -->
+        <form method="POST" action="/">
+            <div class="form-row justify-content-center">
+                <div class="col-md-4">
+                    <input type="date" class="form-control" name="start_date" value="{{ start_date }}" placeholder="Start Date">
+                </div>
+                <div class="col-md-4">
+                    <input type="date" class="form-control" name="end_date" value="{{ end_date }}" placeholder="End Date">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-filter"></i> Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display date range label -->
+        <h2 class="text-center mt-4">{{ date_range_label }}</h2>
+
+        <!-- Display Plotly bar chart -->
+        <div id="utilizationChart" class="mt-5"></div>
+
+        <!-- Display utilization table -->
+        <div class="table-responsive mt-4">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Engineer Name</th>
+                        <th>Total Utilization (hours)</th>
+                        <th>Percentage Utilization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                        <tr class="engineer-row" data-assignee="{{ row['Assignee'] }}" data-toggle="modal" data-target="#breakdownModal">
+                            <td>{{ row['Assignee'] }}</td>
+                            <td>{{ row['TotalTimeSpentHours']|round(2) }}</td>
+                            <td>{{ row['Percentage']|round(2) }}%</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for breakdown data -->
+    <div class="modal fade" id="breakdownModal" tabindex="-1" role="dialog" aria-labelledby="breakdownModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="breakdownModalLabel">Breakdown Data</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="breakdownContent">
+                    <!-- Breakdown data will be appended here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Display Plotly chart
+            var graphJson = {{ graph_json|tojson|safe }};
+            var figure = JSON.parse(graphJson);
+            Plotly.newPlot('utilizationChart', figure.data, figure.layout);
+
+            // Handle click event on engineer rows
+            $('.engineer-row').click(function() {
+                var assignee = $(this).data('assignee');
+                var start_date = $('input[name="start_date"]').val();
+                var end_date = $('input[name="end_date"]').val();
+                fetchBreakdownData(assignee, start_date, end_date);
+            });
+
+            // Function to fetch breakdown data for a specific engineer
+            function fetchBreakdownData(assignee, start_date, end_date) {
+                $.ajax({
+                    type: 'GET',
+                    url: `/breakdown/${assignee}`,
+                    data: { start_date: start_date, end_date: end_date },
+                    success: function(data) {
+                        // Build breakdown data as a list
+                        var breakdownList = '<ul>';
+                        data.forEach(function(item) {
+                            breakdownList += '<li>' + item.TriagedBusiness + ': ' + item.IssueCount + '</li>';
+                        });
+                        breakdownList += '</ul>';
+
+                        // Set modal title with engineer's name
+                        $('#breakdownModalLabel').text('Breakdown for ' + assignee);
+
+                        // Display breakdown list in modal body
+                        $('#breakdownContent').html(breakdownList);
+
+                        // Show the modal
+                        $('#breakdownModal').modal('show');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching breakdown data:', error);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Bootstrap and jQuery scripts -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+# sla
+import os
+import sqlite3
+import pandas as pd
+from flask import Flask, render_template, request, jsonify
+import plotly.express as px
+
+
+app = Flask(__name__)
+
+# Function to fetch SLA data based on date range
+def fetch_sla_data(start_date=None, end_date=None):
+    conn = sqlite3.connect('io_database.db')
+    
+    query = "SELECT SLA, COUNT(*) AS Count FROM ServiceDesk"
+    
+    if start_date and end_date:
+        query += f" WHERE Created BETWEEN '{start_date}' AND '{end_date}'"
+    
+    query += " GROUP BY SLA"
+    
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
+
+# Function to fetch breakdown data based on SLA, TriagedBusiness, and date range
+def fetch_breakdown_data(sla, start_date=None, end_date=None):
+    conn = sqlite3.connect('io_database.db')
+    
+    query = """
+        SELECT TriagedBusiness, COUNT(*) AS Count
+        FROM ServiceDesk
+        WHERE SLA = ?
+    """
+    
+    if start_date and end_date:
+        query += f" AND Created BETWEEN '{start_date}' AND '{end_date}'"
+    
+    query += " GROUP BY TriagedBusiness"
+    
+    df = pd.read_sql_query(query, conn, params=[sla])
+    conn.close()
+    return df
+
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        breakdown_sla = request.form.get('breakdown_sla')
+    else:
+        start_date = None
+        end_date = None
+        breakdown_sla = None
+    
+    # Fetch SLA data based on date range
+    sla_data = fetch_sla_data(start_date, end_date)
+    
+    # Create Plotly donut pie chart
+    fig = px.pie(sla_data, values='Count', names='SLA', title='SLA Distribution', hole=0.4)
+    graph_json = fig.to_json()
+
+    # Convert SLA data to a dictionary for table rendering
+    sla_table_data = sla_data.to_dict('records')
+
+    # Fetch breakdown data if SLA is provided
+    breakdown_data = None
+    if breakdown_sla:
+        breakdown_data = fetch_breakdown_data(breakdown_sla, start_date, end_date)
+
+    return render_template('index.html', graph_json=graph_json, sla_table_data=sla_table_data,
+                           breakdown_data=breakdown_data, start_date=start_date, end_date=end_date)
+
+@app.route('/breakdown', methods=['POST'])
+def breakdown():
+    sla = request.json['sla']
+    start_date = request.json.get('start_date')
+    end_date = request.json.get('end_date')
+    breakdown_data = fetch_breakdown_data(sla, start_date, end_date)
+    breakdown_html = breakdown_data.to_html(classes='table table-striped table-bordered', index=False)
+    return breakdown_html
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLA Distribution</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .form-row {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border-radius: 20px;
+        }
+
+        .btn-primary {
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+
+        .table {
+            margin-top: 20px;
+            width: 100%;
+            background-color: #fff;
+        }
+
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Change cursor to pointer when hovering over table rows */
+        .table tbody tr:hover {
+            cursor: pointer;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-title {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SLA Distribution</h1>
+        
+        <!-- Date range selection form -->
+        <form method="POST" action="/">
+            <div class="form-row">
+                <div class="col">
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" placeholder="Start Date">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" placeholder="End Date">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display selected date range -->
+        {% if start_date and end_date %}
+            <div class="alert alert-info" role="alert">Data from <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></div>
+        {% endif %}
+
+        <!-- Display Plotly donut pie chart -->
+        <div id="slaChart"></div>
+
+        <!-- Display SLA data table -->
+        <div class="table-responsive">
+            <table class="table table-striped" id="slaTable">
+                <thead>
+                    <tr>
+                        <th>SLA</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sla_table_data %}
+                        <tr data-sla="{{ row['SLA'] }}">
+                            <td>{{ row['SLA'] }}</td>
+                            <td>{{ row['Count'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal for breakdown data -->
+        <div class="modal fade" id="breakdownModal" tabindex="-1" role="dialog" aria-labelledby="breakdownModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="breakdownModalLabel">Breakdown Data</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="breakdownModalBody">
+                        <!-- Breakdown data will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Display Plotly donut pie chart
+        var graphJson = {{ graph_json|tojson|safe }};
+        var figure = JSON.parse(graphJson);
+        Plotly.newPlot('slaChart', figure.data, figure.layout);
+
+        // Handle click on SLA table rows
+        $('#slaTable').on('click', 'tr', function() {
+            var sla = $(this).data('sla');
+            fetchBreakdownData(sla);
+        });
+
+        // Function to fetch breakdown data
+        function fetchBreakdownData(sla) {
+            var start_date = $('#start_date').val();
+            var end_date = $('#end_date').val();
+            fetch('/breakdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sla: sla, start_date: start_date, end_date: end_date })
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Display breakdown data in the modal body
+                $('#breakdownModalBody').html(data);
+                // Show the modal
+                $('#breakdownModal').modal('show');
+            })
+            .catch(error => console.error('Error fetching breakdown data:', error));
+        }
+    </script>
+</body>
+</html>
