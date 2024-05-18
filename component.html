@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Desk Component Counts</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-weight: bold;
+            animation: slideInDown 0.5s ease-in-out;
+        }
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); }
+            to { transform: translateY(0); }
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        #plotly-chart {
+            margin-bottom: 40px;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        li {
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        li:hover {
+            color: #007bff;
+            transform: translateX(5px);
+        }
+        .date-range-label {
+            font-size: 16px;
+            font-style: italic;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .modal-content {
+            animation: slideInUp 0.5s ease-in-out;
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(50px); }
+            to { transform: translateY(0); }
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            transition: background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container animate__animated animate__fadeIn">
+        <h1 class="animate__animated animate__slideInDown">Service Desk Component Counts</h1>
+
+        <form method="POST" action="/" class="animate__animated animate__zoomIn">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" class="form-control">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" class="form-control">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
+        </form>
+
+        {% if date_range_label %}
+            <p class="date-range-label">{{ date_range_label }}</p>
+        {% endif %}
+
+        <div id="plotly-chart" class="animate__animated animate__fadeInUp"></div>
+
+        <p><strong>Total Components:</strong> {{ total_components }}</p>
+
+        <h3>Component Totals</h3>
+        <ul class="component-list">
+            {% for component, count in component_totals.items() %}
+                <li onclick="fetchComponentDetails('{{ component }}');" class="component-item animate__animated animate__fadeInUp"><strong>{{ component }}:</strong> {{ count }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Modal to display component details -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" role="dialog" aria-labelledby="detailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content animate__animated animate__slideInUp">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">Component Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="detailsBody">
+                    <!-- Component details will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        // Load the Plotly chart from JSON data
+        var graphJson = {{ graph_json|safe }};
+        Plotly.newPlot('plotly-chart', graphJson.data, graphJson.layout, { responsive: true });
+
+        // Function to fetch and display component details in modal
+        function fetchComponentDetails(component) {
+            fetch(`/details/${component}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+
+                // Construct HTML for component details
+                let detailsHtml = '<ul>';
+                data.details.forEach(detail => {
+                    detailsHtml += `<li><strong>${detail.Detail1}:</strong> ${detail.Count}</li>`;
+                });
+                detailsHtml += '</ul>';
+
+                // Update modal body with component details
+                document.getElementById('detailsBody').innerHTML = detailsHtml;
+
+                // Show the modal using Bootstrap modal method
+                $('#detailsModal').modal('show');
+            })
+            .catch(error => {
+                console.error('Error fetching component details:', error);
+                alert('Error fetching component details. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

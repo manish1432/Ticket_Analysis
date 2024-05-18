@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Distribution by Triaged Business</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            margin-top: 20px;
+            color: #343a40;
+        }
+        .form-row {
+            margin-top: 20px;
+        }
+        .btn-primary {
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        #ticketChart {
+            margin-top: 30px;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .table {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ticket Analysis by Business Unit</h1>
+        
+        <!-- Date range selection form -->
+        <form method="POST" action="/">
+            <div class="form-row">
+                <div class="col">
+                    <input type="date" class="form-control" name="start_date" placeholder="Start Date">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control" name="end_date" placeholder="End Date">
+                </div>
+                <div class="col">
+                    <select class="form-control" name="triaged_business">
+                        <option value="MPC">MPC</option>
+                        <option value="The Mill">The Mill</option>
+                        <option value="Technicolor Games">Technicolor Games</option>
+                        <option value="Mikros Animation">Mikros Animation</option>
+                        <option value="Technicolor Group">Technicolor Group (All)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display date range label -->
+        {% if date_range_label %}
+            <h2>{{ date_range_label }}</h2>
+        {% endif %}
+
+        <!-- Display total issues count -->
+        <h3>Total Issues: {{ total_issues }}</h3>
+
+        <!-- Display Plotly pie chart -->
+        <div id="ticketChart"></div>
+
+        <!-- Display issue counts -->
+        <h3>Issue Counts</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Business Unit</th>
+                        <th>Service Issue</th>
+                        <th>Issue Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for issue in issues_data %}
+                        <tr class="issue-row" data-service-issue="{{ issue['ServiceIssue'] }}">
+                            <td>{{ issue['TriagedBusiness'] }}</td>
+                            <td>{{ issue['ServiceIssue'] }}</td>
+                            <td>{{ issue['IssueCount'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Breakdown Modal -->
+        <div class="modal fade" id="breakdownModal" tabindex="-1" role="dialog" aria-labelledby="breakdownModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="breakdownModalLabel">Breakdown Data</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="breakdownContainer">
+                        <!-- Breakdown data will be appended here -->
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Display Plotly chart
+            var graphJson = {{ graph_json|tojson|safe }};
+            var figure = JSON.parse(graphJson);
+            Plotly.newPlot('ticketChart', figure.data, figure.layout);
+
+            // Handle click on service issue rows to fetch and display breakdown
+            $('.issue-row').click(function() {
+                var serviceIssue = $(this).data('service-issue');
+                $.ajax({
+                    url: '/breakdown',
+                    type: 'POST',
+                    data: { service_issue: serviceIssue },
+                    success: function(response) {
+                        $('#breakdownContainer').html(response);
+                        $('#breakdownModal').modal('show'); // Show the modal
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- Bootstrap and jQuery scripts -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

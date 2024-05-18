@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Issue Pie Chart</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: #333333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            margin-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #007bff;
+            font-weight: bold;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        #service-issue-chart, #triaged-alerts-chart, #triaged-requests-chart, #triaged-self-tickets-chart {
+            margin-bottom: 30px;
+        }
+        .service-issue {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .counts {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333333;
+        }
+        .animate__animated {
+            animation-duration: 1s;
+            animation-fill-mode: both;
+        }
+    </style>
+</head>
+<body>
+    <div class="container animate__animated animate__fadeIn">
+        <h1>Service Issue Distribution</h1>
+
+        <!-- Date Filter Form -->
+        <form method="post" action="/" class="animate__animated animate__zoomIn">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" class="form-control">
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" class="form-control">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Apply Filter</button>
+        </form>
+
+        <!-- Date Range Display -->
+        <p class="text-center">{{ date_range }}</p>
+
+        <!-- Service Issue Distribution Pie Chart -->
+        <div id="service-issue-chart" class="animate__animated animate__fadeInUp"></div>
+
+        <div class="service-issue">
+            <p class="counts">Total Issues: {{ alerts_count + request_count + self_ticket_count }}</p>
+            <p class="counts">Alerts: {{ alerts_count }}</p>
+            <p class="counts">Requests: {{ request_count }}</p>
+            <p class="counts">Self-Tickets: {{ self_ticket_count }}</p>
+        </div>
+
+        <!-- Triaged Business Alerts Pie Chart -->
+        <div id="triaged-alerts-chart" class="animate__animated animate__fadeInUp"></div>
+
+        <!-- Triaged Business Requests Pie Chart -->
+        <div id="triaged-requests-chart" class="animate__animated animate__fadeInUp"></div>
+
+        <!-- Triaged Business Self-Tickets Pie Chart -->
+        <div id="triaged-self-tickets-chart" class="animate__animated animate__fadeInUp"></div>
+    </div>
+
+    <script>
+        // Load Plotly charts from JSON data
+        var serviceIssueChartJson = {{ service_issue_chart_json|safe }};
+        Plotly.newPlot('service-issue-chart', serviceIssueChartJson.data, serviceIssueChartJson.layout, { responsive: true, displayModeBar: false });
+
+        var triagedAlertsChartJson = {{ triaged_alerts_chart_json|safe }};
+        Plotly.newPlot('triaged-alerts-chart', triagedAlertsChartJson.data, triagedAlertsChartJson.layout, { responsive: true, displayModeBar: false });
+
+        var triagedRequestsChartJson = {{ triaged_requests_chart_json|safe }};
+        Plotly.newPlot('triaged-requests-chart', triagedRequestsChartJson.data, triagedRequestsChartJson.layout, { responsive: true, displayModeBar: false });
+
+        var triagedSelfTicketsChartJson = {{ triaged_self_tickets_chart_json|safe }};
+        Plotly.newPlot('triaged-self-tickets-chart', triagedSelfTicketsChartJson.data, triagedSelfTicketsChartJson.layout, { responsive: true, displayModeBar: false });
+    </script>
+</body>
+</html>

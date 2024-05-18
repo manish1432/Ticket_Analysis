@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Unified Dashboard</h1>
+        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="sla-tab" data-toggle="tab" href="#sla" role="tab" aria-controls="sla" aria-selected="true">SLA</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="utilization-tab" data-toggle="tab" href="#utilization" role="tab" aria-controls="utilization" aria-selected="false">Utilization</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="service-issue-tab" data-toggle="tab" href="#service-issue" role="tab" aria-controls="service-issue" aria-selected="false">Service Issue Distribution</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="engineer-tab" data-toggle="tab" href="#engineer" role="tab" aria-controls="engineer" aria-selected="false">Engineer</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="component-tab" data-toggle="tab" href="#component" role="tab" aria-controls="component" aria-selected="false">Component</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="bu-wise-tab" data-toggle="tab" href="#bu-wise" role="tab" aria-controls="bu-wise" aria-selected="false">BU Wise</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="dashboardTabsContent">
+            <div class="tab-pane fade show active" id="sla" role="tabpanel" aria-labelledby="sla-tab">
+                {% include 'sla.html' %}
+            </div>
+            <div class="tab-pane fade" id="utilization" role="tabpanel" aria-labelledby="utilization-tab">
+                {% include 'utilization.html' %}
+            </div>
+            <div class="tab-pane fade" id="service-issue" role="tabpanel" aria-labelledby="service-issue-tab">
+                {% include 'service_issue_distribution.html' %}
+            </div>
+            <div class="tab-pane fade" id="engineer" role="tabpanel" aria-labelledby="engineer-tab">
+                {% include 'engineer.html' %}
+            </div>
+            <div class="tab-pane fade" id="component" role="tabpanel" aria-labelledby="component-tab">
+                {% include 'component.html' %}
+            </div>
+            <div class="tab-pane fade" id="bu-wise" role="tabpanel" aria-labelledby="bu-wise-tab">
+                {% include 'bu_wise.html' %}
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

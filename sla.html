@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLA Distribution</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            animation: slideInDown 1s ease-in-out;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); }
+            to { transform: translateY(0); }
+        }
+
+        .form-row {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border-radius: 20px;
+        }
+
+        .btn-primary {
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+
+        .table {
+            margin-top: 20px;
+            width: 100%;
+            background-color: #fff;
+        }
+
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .table tbody tr:hover {
+            cursor: pointer;
+            background-color: #e9ecef;
+            transition: background-color 0.3s;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            animation: slideInUp 1s ease-in-out;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(50px); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-title {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container animate__animated animate__fadeIn">
+        <h1 class="animate__animated animate__slideInDown">SLA Distribution</h1>
+        
+        <!-- Date range selection form -->
+        <form method="POST" action="/" class="bg-light p-4 rounded shadow-sm animate__animated animate__zoomIn">
+            <div class="form-row">
+                <div class="col">
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}" placeholder="Start Date">
+                </div>
+                <div class="col">
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}" placeholder="End Date">
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Display selected date range -->
+        {% if start_date and end_date %}
+            <div class="alert alert-info mt-4 animate__animated animate__fadeIn" role="alert">Data from <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></div>
+        {% endif %}
+
+        <!-- Display Plotly donut pie chart -->
+        <div id="slaChart" class="mt-4 animate__animated animate__fadeInUp"></div>
+
+        <!-- Display SLA data table -->
+        <div class="table-responsive mt-4 animate__animated animate__fadeInUp">
+            <table class="table table-striped" id="slaTable">
+                <thead>
+                    <tr>
+                        <th>SLA</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sla_table_data %}
+                        <tr data-sla="{{ row['SLA'] }}">
+                            <td>{{ row['SLA'] }}</td>
+                            <td>{{ row['Count'] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal for breakdown data -->
+        <div class="modal fade" id="breakdownModal" tabindex="-1" role="dialog" aria-labelledby="breakdownModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content animate__animated animate__slideInUp">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="breakdownModalLabel">Breakdown Data</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="breakdownModalBody">
+                        <!-- Breakdown data will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Display Plotly donut pie chart
+        var graphJson = {{ graph_json|tojson|safe }};
+        var figure = JSON.parse(graphJson);
+        Plotly.newPlot('slaChart', figure.data, figure.layout);
+
+        // Handle click on SLA table rows
+        $('#slaTable').on('click', 'tr', function() {
+            var sla = $(this).data('sla');
+            fetchBreakdownData(sla);
+        });
+
+        // Function to fetch breakdown data
+        function fetchBreakdownData(sla) {
+            var start_date = $('#start_date').val();
+            var end_date = $('#end_date').val();
+            fetch('/breakdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sla: sla, start_date: start_date, end_date: end_date })
+            })
+            .then(response => response.text())
+            .then(data => {
+                // Display breakdown data in the modal body
+                $('#breakdownModalBody').html(data);
+                // Show the modal
+                $('#breakdownModal').modal('show');
+            })
+            .catch(error => console.error('Error fetching breakdown data:', error));
+        }
+    </script>
+</body>
+</html>
