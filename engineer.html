@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> -->
     <style>
         body {
             background-color: #f8f9fa;
@@ -62,25 +62,25 @@
             border-color: #004085;
         }
     </style>
-</head>
-<body>
+<!-- </head>
+<body> -->
     <div class="container animate__animated animate__fadeIn">
         <h1 class="animate__animated animate__slideInDown">Tickets Assigned to Engineers</h1>
         
         <!-- Date range selection form -->
-        <form method="POST" action="/" class="bg-light p-4 rounded shadow-sm animate__animated animate__zoomIn">
+        <!-- <form method="POST" action="/" class="bg-light p-4 rounded shadow-sm animate__animated animate__zoomIn"> -->
             <div class="form-row">
                 <div class="col">
-                    <input type="date" class="form-control" name="start_date" placeholder="Start Date">
+                    <input type="date" id="txt_eng_start_date" class="form-control" name="start_date" placeholder="Start Date">
                 </div>
                 <div class="col">
-                    <input type="date" class="form-control" name="end_date" placeholder="End Date">
+                    <input type="date" id="txt_eng_end_date" class="form-control" name="end_date" placeholder="End Date">
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
+                    <button type="submit" onclick="apply_eng_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
                 </div>
             </div>
-        </form>
+        <!-- </form> -->
 
         <!-- Display date range label -->
         {% if date_range_label %}
@@ -133,12 +133,14 @@
         $(document).ready(function() {
             $('.engineer-row').on('click', function() {
                 var engineerName = $(this).data('engineer');
+                // var start_date = $('#txt_eng_start_date').val();
+                // var end_date = $('#txt_eng_end_date').val();
                 
                 $.ajax({
                     type: 'POST',
                     url: '/engineer-details',
                     contentType: 'application/json;charset=UTF-8',
-                    data: JSON.stringify({ engineerName: engineerName }),
+                    data: JSON.stringify({ engineerName: engineerName, start_date: start_date, end_date: end_date}),
                     success: function(response) {
                         var details = response.details;
                         var engineerDetailsList = $('#engineerDetailsList');
@@ -155,13 +157,27 @@
             });
         });
 
+        function apply_eng_filter() {
+            $.ajax({
+                url: '/engineer',
+                type: 'POST',
+                    data: { start_date:$('#txt_eng_start_date').val(), end_date:$('#txt_eng_end_date').val()},
+                success: function(data) {
+                    $('#engineer').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Engineer data:', error);
+                }
+            });
+        }
+
         // Display Plotly bar chart
         var graphJson = {{ graph_json|tojson|safe }};
         var figure = JSON.parse(graphJson);
         Plotly.newPlot('ticketChart', figure.data, figure.layout);
     </script>
 
-    <!-- Bootstrap and jQuery scripts -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</body>
-</html>
+    <!-- Bootstrap and jQuery scripts
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
+<!-- </body>
+</html> -->

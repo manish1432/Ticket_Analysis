@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,7 @@
     <title>Service Issue Pie Chart</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/> -->
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -48,28 +48,32 @@
             animation-fill-mode: both;
         }
     </style>
-</head>
-<body>
+<!-- </head>
+<body> -->
     <div class="container animate__animated animate__fadeIn">
         <h1>Service Issue Distribution</h1>
 
         <!-- Date Filter Form -->
-        <form method="post" action="/" class="animate__animated animate__zoomIn">
+        <!-- <form class="animate__animated animate__zoomIn"> -->
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="start_date">Start Date:</label>
-                    <input type="date" id="start_date" name="start_date" class="form-control">
+                    <input type="date" id="txt_ser_start_date" name="start_date" class="form-control">
                 </div>
                 <div class="form-group col-md-6">
                     <label for="end_date">End Date:</label>
-                    <input type="date" id="end_date" name="end_date" class="form-control">
+                    <input type="date" id="txt_ser_end_date" name="end_date" class="form-control">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Apply Filter</button>
-        </form>
+            <button type="button" onclick="apply_ser_filter()" class="btn btn-primary btn-block">Apply Filter</button>
+        <!-- </form> -->
 
         <!-- Date Range Display -->
-        <p class="text-center">{{ date_range }}</p>
+        <p class="text-center" id="date_range"></p>
+        <!-- Display date range label -->
+        <!-- {% if date_range_label %}
+            <h2>{{ date_range_label }}</h2>
+        {% endif %} -->
 
         <!-- Service Issue Distribution Pie Chart -->
         <div id="service-issue-chart" class="animate__animated animate__fadeInUp"></div>
@@ -92,6 +96,7 @@
     </div>
 
     <script>
+    
         // Load Plotly charts from JSON data
         var serviceIssueChartJson = {{ service_issue_chart_json|safe }};
         Plotly.newPlot('service-issue-chart', serviceIssueChartJson.data, serviceIssueChartJson.layout, { responsive: true, displayModeBar: false });
@@ -104,6 +109,20 @@
 
         var triagedSelfTicketsChartJson = {{ triaged_self_tickets_chart_json|safe }};
         Plotly.newPlot('triaged-self-tickets-chart', triagedSelfTicketsChartJson.data, triagedSelfTicketsChartJson.layout, { responsive: true, displayModeBar: false });
+    
+        function apply_ser_filter() {
+            $.ajax({
+                url: '/service_issue_distribution',
+                type: 'POST',
+                data: { start_date: $('#txt_ser_start_date').val(), end_date: $('#txt_ser_end_date').val() },
+                success: function(data) {
+                    $('#service-issue').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Service issue distribution data:', error);
+                }
+            });
+        }
     </script>
-</body>
-</html>
+<!-- </body>
+</html> -->

@@ -5,13 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center">Unified Dashboard</h1>
+        <h1 class="text-center">Technicolor Group IO Dashboard</h1>
         <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" id="sla-tab" data-toggle="tab" href="#sla" role="tab" aria-controls="sla" aria-selected="true">SLA</a>
+                <a class="nav-link active" id="bu-wise-tab" data-toggle="tab" href="#bu-wise" role="tab" aria-controls="bu-wise" aria-selected="true">BU Wise</a>
+            </li>
+            <li class="nav-item">
+            
+                <a class="nav-link" id="sla-tab" data-toggle="tab" href="#sla" role="tab" aria-controls="sla" aria-selected="false">SLA</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" id="utilization-tab" data-toggle="tab" href="#utilization" role="tab" aria-controls="utilization" aria-selected="false">Utilization</a>
@@ -25,32 +33,122 @@
             <li class="nav-item">
                 <a class="nav-link" id="component-tab" data-toggle="tab" href="#component" role="tab" aria-controls="component" aria-selected="false">Component</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" id="bu-wise-tab" data-toggle="tab" href="#bu-wise" role="tab" aria-controls="bu-wise" aria-selected="false">BU Wise</a>
-            </li>
+            
         </ul>
         <div class="tab-content" id="dashboardTabsContent">
-            <div class="tab-pane fade show active" id="sla" role="tabpanel" aria-labelledby="sla-tab">
-                {% include 'sla.html' %}
+            <div class="tab-pane fade" id="sla" role="tabpanel" aria-labelledby="sla-tab">
+                
             </div>
             <div class="tab-pane fade" id="utilization" role="tabpanel" aria-labelledby="utilization-tab">
-                {% include 'utilization.html' %}
+                
             </div>
             <div class="tab-pane fade" id="service-issue" role="tabpanel" aria-labelledby="service-issue-tab">
-                {% include 'service_issue_distribution.html' %}
+                
             </div>
             <div class="tab-pane fade" id="engineer" role="tabpanel" aria-labelledby="engineer-tab">
-                {% include 'engineer.html' %}
+                
             </div>
             <div class="tab-pane fade" id="component" role="tabpanel" aria-labelledby="component-tab">
-                {% include 'component.html' %}
+                
             </div>
-            <div class="tab-pane fade" id="bu-wise" role="tabpanel" aria-labelledby="bu-wise-tab">
-                {% include 'bu_wise.html' %}
+            <div class="tab-pane fade show active" id="bu-wise" role="tabpanel" aria-labelledby="bu-wise-tab">
+                
             </div>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function()
+        {
+            get_bu_wise()
+            $('#engineer-tab').click(function(){ get_engineer();});
+            $('#sla-tab').click(function(){ get_sla();});
+            $('#component-tab').click(function(){ get_component();});
+            $('#utilization-tab').click(function(){ get_utilization();});
+            $('#service-issue-tab').click(function(){ get_service_issue_distribution();});
+        }
+    );
+        function get_bu_wise()
+        {
+            $.ajax({
+                    url: '/bu_wise',
+                    type: 'GET',
+                    // data: { service_issue: serviceIssue },
+                    success: function(response) {
+                        $('#bu-wise').html(response);
+                        // $('#breakdownModal').modal('show'); // Show the modal
+                    }
+                });
+
+        }function get_engineer() {
+            $.ajax({
+                url: '/engineer',
+                type: 'GET',
+                success: function(data) {
+                    $('#engineer').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Engineer data:', error);
+                }
+            });
+        }
+
+        function get_sla() {
+            $.ajax({
+                url: '/sla',
+                type: 'GET',
+                success: function(data) {
+                    $('#sla').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Sla data:', error);
+                }
+            });
+        }
+   
+        function get_component() {
+            $.ajax({
+                url: '/component',
+                type: 'GET',
+                success: function(data) {
+                    $('#component').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Component data:', error);
+                }
+            });
+        }
+
+        function get_utilization() {
+            $.ajax({
+                url: '/utilization',
+                type: 'GET',
+                success: function(data) {
+                    // console.log(data)
+                    $('#utilization').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Utilization data:', error);
+                }
+            });
+        }
+
+        function get_service_issue_distribution() {
+            $.ajax({
+                url: '/service_issue_distribution',
+                type: 'GET',
+                success: function(data) {
+                    // console.log(data)
+                    $('#service-issue').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching servive_issue_distribution data:', error);
+                }
+            });
+        }
+        
+    
+    </script>
 </body>
 </html>

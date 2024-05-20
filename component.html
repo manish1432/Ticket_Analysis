@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Desk Component Counts</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/> -->
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -81,24 +81,24 @@
             border-color: #004085;
         }
     </style>
-</head>
-<body>
+<!-- </head>
+<body> -->
     <div class="container animate__animated animate__fadeIn">
         <h1 class="animate__animated animate__slideInDown">Service Desk Component Counts</h1>
 
-        <form method="POST" action="/" class="animate__animated animate__zoomIn">
+        <!-- <form method="POST" action="/component" class="animate__animated animate__zoomIn"> -->
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="start_date">Start Date:</label>
-                    <input type="date" id="start_date" name="start_date" class="form-control">
+                    <input type="date" id="txt_comp_start_date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="Start Date">
                 </div>
                 <div class="form-group col-md-6">
                     <label for="end_date">End Date:</label>
-                    <input type="date" id="end_date" name="end_date" class="form-control">
+                    <input type="date" id="txt_comp_end_date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="Start Date">
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
-        </form>
+            <button type="submit" onclick="apply_comp_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
+        <!-- </form> -->
 
         {% if date_range_label %}
             <p class="date-range-label">{{ date_range_label }}</p>
@@ -133,17 +133,27 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
     <script>
         // Load the Plotly chart from JSON data
         var graphJson = {{ graph_json|safe }};
         Plotly.newPlot('plotly-chart', graphJson.data, graphJson.layout, { responsive: true });
 
         // Function to fetch and display component details in modal
-        function fetchComponentDetails(component) {
-            fetch(`/details/${component}`)
+        function fetchComponentDetails(comp) {
+            var start_date = $('#txt_comp_start_date').val();
+            var end_date = $('#txt_comp_end_date').val();
+            fetch(`/comp_details`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ comp: comp, start_date: start_date, end_date: end_date })
+            }
+           
+            )
             .then(response => response.json())
             .then(data => {
                 console.log(data);
@@ -166,6 +176,20 @@
                 alert('Error fetching component details. Please try again.');
             });
         }
+
+        function apply_comp_filter() {
+            $.ajax({
+                url: '/component',
+                type: 'POST',
+                    data: { start_date:$('#txt_comp_start_date').val(), end_date:$('#txt_comp_end_date').val()},
+                success: function(data) {
+                    $('#component').html(data);
+                },
+                error: function(error) {
+                    console.error('Error fetching Component data:', error);
+                }
+            });
+        }
     </script>
-</body>
-</html>
+<!-- </body>
+</html> -->
