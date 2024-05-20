@@ -58,8 +58,8 @@ def fetch_breakdown_data(service_issue):
     conn.close()
     return df
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+# @app.route('/', methods=['GET', 'POST'])
+def get_data(start_date, end_date):
     triaged_business = request.form.get('triaged_business', 'MPC')  # Default triaged business
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -97,6 +97,7 @@ def index():
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
         date_range_label = f"Data from {start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
+        print(date_range_label)
     
     total_issues = data['IssueCount'].sum()
 
@@ -108,12 +109,12 @@ def index():
                            total_issues=total_issues, 
                            issues_data=issues_data)
 
-@app.route('/breakdown', methods=['POST'])
-def breakdown():
-    service_issue = request.form.get('service_issue')
-    breakdown_data = fetch_breakdown_data(service_issue)
-    breakdown_html = breakdown_data.to_html(classes='table table-striped table-bordered', index=False)
-    return breakdown_html
+# # @app.route('/breakdown', methods=['POST'])
+# def breakdown():
+#     service_issue = request.form.get('service_issue')
+#     breakdown_data = fetch_breakdown_data(service_issue)
+#     breakdown_html = breakdown_data.to_html(classes='table table-striped table-bordered', index=False)
+#     return breakdown_html
 
 if __name__ == '__main__':
     app.run(debug=True)

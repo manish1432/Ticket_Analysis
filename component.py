@@ -32,16 +32,23 @@ def fetch_data(start_date=None, end_date=None):
 
     return df
 
-def fetch_component_details(component):
+def fetch_component_details(component, start_date, end_date):
     try:
         # Connect to SQLite database
         conn = sqlite3.connect('io_database.db')
+        print(component, start_date, end_date)
 
         # Construct SQL query to fetch top 10 details for the selected component
-        query = f"SELECT Detail1, COUNT(*) AS Count FROM ServiceDesk WHERE Component = ? GROUP BY Detail1"
+        query = f"SELECT Detail1, COUNT(*) AS Count FROM ServiceDesk WHERE Component = ? "
+        if start_date and end_date:
+            query += " AND Created >= ? AND Created <= ?"
+        query += " GROUP BY Detail1"
         query += " ORDER BY Count DESC"  # Sort by count in descending order
         query += " LIMIT 10;"  # Limit to top 10 details
-        df = pd.read_sql_query(query, conn, params=(component,))
+        if start_date and end_date:
+                df = pd.read_sql_query(query, conn, params=(component, start_date, end_date))
+        else:
+                df = pd.read_sql_query(query, conn, params=(component,))
 
         return df
     except Exception as e:
@@ -50,20 +57,21 @@ def fetch_component_details(component):
     finally:
         conn.close()
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+# @app.route('/component', methods=['GET', 'POST'])
+def get_data():
     date_range_label = ""
     start_date = None
     end_date = None
     
     if request.method == 'POST':
         # Retrieve form data (start_date and end_date)
-        start_date = request.form['start_date']
-        end_date = request.form['end_date']
-        
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        # print(start_date, end_date)
         if start_date and end_date:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            # print(start_date, end_date)
             date_range_label = f"Data from {start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
     
     # Fetch data based on the selected date range
@@ -102,22 +110,11 @@ def index():
 
     # Get total count for each component
     component_totals = df.set_index('Component').to_dict()['Count']
-
+    print(start_date, end_date)
     return render_template('component.html', graph_json=graph_json, total_components=total_components,
-                           component_totals=component_totals, date_range_label=date_range_label)
+                           component_totals=component_totals, date_range_label=date_range_label, start_date=start_date, end_date=end_date)
 
-@app.route('/details/<component>')
-def component_details(component):
-    # Fetch details for the specified component
-    df = fetch_component_details(component)
 
-    # Create JSON response with details data
-    details_data = {
-        "component": component,
-        "details": df.to_dict('records') if not df.empty else []
-    }
-
-    return jsonify(details_data)
 
 if __name__ == '__main__':
     app.run(debug=True)

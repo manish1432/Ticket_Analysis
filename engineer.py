@@ -33,7 +33,7 @@ def fetch_ticket_data(start_date=None, end_date=None):
 # Function to fetch service issue breakdown for a specific engineer
 def fetch_engineer_details(engineer_name):
     conn = sqlite3.connect('io_database.db')
-    
+   
     query = """
         SELECT ServiceIssue, COUNT(*) AS IssueCount
         FROM ServiceDesk
@@ -46,8 +46,8 @@ def fetch_engineer_details(engineer_name):
     
     return df
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+@app.route('/engineer', methods=['GET', 'POST'])
+def get_data():
     date_range_label = ""
     start_date = None
     end_date = None
@@ -60,6 +60,7 @@ def index():
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
             date_range_label = f"Data from {start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
+            print(start_date, end_date)
     
     # Fetch ticket data based on the selected date range
     ticket_data = fetch_ticket_data(start_date, end_date)
@@ -100,16 +101,16 @@ def index():
     return render_template('engineer.html', graph_json=graph_json,
                            engineers_data=engineers_data, date_range_label=date_range_label)
 
-@app.route('/engineer-details', methods=['POST'])
-def engineer_details():
-    data = request.get_json()
-    engineer_name = data['engineerName']
+# @app.route('/engineer-details', methods=['POST'])
+# def engineer_details():
+#     data = request.get_json()
+#     engineer_name = data['engineerName']
     
-    # Fetch engineer details
-    details_df = fetch_engineer_details(engineer_name)
-    details_dict = details_df.set_index('ServiceIssue')['IssueCount'].to_dict()
+#     # Fetch engineer details
+#     details_df = fetch_engineer_details(engineer_name)
+#     details_dict = details_df.set_index('ServiceIssue')['IssueCount'].to_dict()
     
-    return jsonify(details={'engineerName': engineer_name, 'details': details_dict})
+#     return jsonify(details={'engineerName': engineer_name, 'details': details_dict})
 
 if __name__ == '__main__':
     app.run(debug=True)

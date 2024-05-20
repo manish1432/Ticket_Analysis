@@ -4,7 +4,6 @@ import pandas as pd
 from flask import Flask, render_template, request, jsonify
 import plotly.express as px
 
-
 app = Flask(__name__)
 
 # Function to fetch SLA data based on date range
@@ -41,21 +40,26 @@ def fetch_breakdown_data(sla, start_date=None, end_date=None):
     conn.close()
     return df
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+# @app.route('/sla', methods=['GET', 'POST'])
+def get_data():
     if request.method == 'POST':
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
         breakdown_sla = request.form.get('breakdown_sla')
+        
+        print(f"Received POST request with start_date={start_date}, end_date={end_date}, breakdown_sla={breakdown_sla}")
     else:
         start_date = None
         end_date = None
         breakdown_sla = None
     
+    return set_graph_data(breakdown_sla, start_date, end_date)
+def set_graph_data(breakdown_sla, start_date, end_date):
+
     # Fetch SLA data based on date range
     sla_data = fetch_sla_data(start_date, end_date)
-    
-    # Create Plotly donut pie chart
+
+     # Create Plotly donut pie chart
     fig = px.pie(sla_data, values='Count', names='SLA', title='SLA Distribution', hole=0.4)
     graph_json = fig.to_json()
 
@@ -66,16 +70,14 @@ def index():
     breakdown_data = None
     if breakdown_sla:
         breakdown_data = fetch_breakdown_data(breakdown_sla, start_date, end_date)
-
+        print("Fetched breakdown data:", breakdown_data)       
+    
     return render_template('sla.html', graph_json=graph_json, sla_table_data=sla_table_data,
                            breakdown_data=breakdown_data, start_date=start_date, end_date=end_date)
 
-@app.route('/breakdown', methods=['POST'])
-def breakdown():
-    sla = request.json['sla']
-    start_date = request.json.get('start_date')
-    end_date = request.json.get('end_date')
-    breakdown_data = fetch_breakdown_data(sla, start_date, end_date)
+
+def get_breakdown(sla_data, start_date, end_date):
+    breakdown_data = fetch_breakdown_data(sla_data, start_date, end_date)
     breakdown_html = breakdown_data.to_html(classes='table table-striped table-bordered', index=False)
     return breakdown_html
 

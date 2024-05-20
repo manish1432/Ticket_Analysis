@@ -87,8 +87,8 @@ def generate_pie_chart(labels, values, title):
 
     return chart_json
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+# @app.route('/', methods=['GET', 'POST'])
+def get_data():
     try:
         start_date = None
         end_date = None

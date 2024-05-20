@@ -65,11 +65,11 @@ def fetch_breakdown_data(assignee, start_date=None, end_date=None):
     
     return df
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+# @app.route('/', methods=['GET', 'POST'])
+def get_data(start_date, end_date):
     # Default date range (None if not provided)
-    start_date = request.form.get('start_date')
-    end_date = request.form.get('end_date')
+    # start_date = request.form.get('start_date')
+    # end_date = request.form.get('end_date')
     
     # Fetch utilization data based on the selected date range
     data = fetch_utilization_data(start_date, end_date)
