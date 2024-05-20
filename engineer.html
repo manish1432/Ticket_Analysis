@@ -133,8 +133,8 @@
         $(document).ready(function() {
             $('.engineer-row').on('click', function() {
                 var engineerName = $(this).data('engineer');
-                // var start_date = $('#txt_eng_start_date').val();
-                // var end_date = $('#txt_eng_end_date').val();
+                var start_date = $('#txt_eng_start_date').val();
+                var end_date = $('#txt_eng_end_date').val();
                 
                 $.ajax({
                     type: 'POST',

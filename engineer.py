@@ -17,7 +17,7 @@ def fetch_ticket_data(start_date=None, end_date=None):
                SUM(CASE WHEN ServiceIssue = 'self-ticket' THEN 1 ELSE 0 END) AS SelfTicketCount
         FROM ServiceDesk
     """
-    
+    params = [start_date, end_date]
     if start_date and end_date:
         start_date_str = start_date.strftime('%Y-%m-%d')
         end_date_str = end_date.strftime('%Y-%m-%d')
