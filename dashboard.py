@@ -106,7 +106,7 @@ def engineer_page():
     return engineer.get_data()
 
 @app.route('/engineer-details', methods=['POST'])
-def engineer_details(start_date, end_date):
+def engineer_details():
     data = request.get_json()
     engineer_name = data['engineerName']
     
