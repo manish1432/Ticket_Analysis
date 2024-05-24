@@ -9,20 +9,84 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #343a40;
+            padding-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            font-weight: bold;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        h1::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background-color: #007bff;
+            margin: 10px auto 0;
+            border-radius: 2px;
+        }
+        .container {
+            margin-top: 40px;
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-tabs {
+            border-bottom: 2px solid #007bff;
+        }
+        .nav-tabs .nav-link {
+            color: #007bff;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #0056b3;
+        }
+        .tab-content {
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+        .btn-primary {
+            background-image: linear-gradient(45deg, #007bff, #0056b3);
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            transition: background-image 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+        .btn-primary:hover {
+            background-image: linear-gradient(45deg, #0056b3, #003f7f);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 91, 187, 0.5);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center">Technicolor Group IO Dashboard</h1>
+    <div class="container animate__animated animate__fadeIn">
+        <h1>Technicolor Group IO Dashboard</h1>
         <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
             <li class="nav-item">
                 <a class="nav-link active" id="bu-wise-tab" data-toggle="tab" href="#bu-wise" role="tab" aria-controls="bu-wise" aria-selected="true">BU Wise</a>
             </li>
             <li class="nav-item">
-            
                 <a class="nav-link" id="sla-tab" data-toggle="tab" href="#sla" role="tab" aria-controls="sla" aria-selected="false">SLA</a>
             </li>
             <li class="nav-item">
@@ -37,55 +101,39 @@
             <li class="nav-item">
                 <a class="nav-link" id="component-tab" data-toggle="tab" href="#component" role="tab" aria-controls="component" aria-selected="false">Component</a>
             </li>
-            
         </ul>
         <div class="tab-content" id="dashboardTabsContent">
-            <div class="tab-pane fade" id="sla" role="tabpanel" aria-labelledby="sla-tab">
-                
-            </div>
-            <div class="tab-pane fade" id="utilization" role="tabpanel" aria-labelledby="utilization-tab">
-                
-            </div>
-            <div class="tab-pane fade" id="service-issue" role="tabpanel" aria-labelledby="service-issue-tab">
-                
-            </div>
-            <div class="tab-pane fade" id="engineer" role="tabpanel" aria-labelledby="engineer-tab">
-                
-            </div>
-            <div class="tab-pane fade" id="component" role="tabpanel" aria-labelledby="component-tab">
-                
-            </div>
-            <div class="tab-pane fade show active" id="bu-wise" role="tabpanel" aria-labelledby="bu-wise-tab">
-                
-            </div>
+            <div class="tab-pane fade show active" id="bu-wise" role="tabpanel" aria-labelledby="bu-wise-tab"></div>
+            <div class="tab-pane fade" id="sla" role="tabpanel" aria-labelledby="sla-tab"></div>
+            <div class="tab-pane fade" id="utilization" role="tabpanel" aria-labelledby="utilization-tab"></div>
+            <div class="tab-pane fade" id="service-issue" role="tabpanel" aria-labelledby="service-issue-tab"></div>
+            <div class="tab-pane fade" id="engineer" role="tabpanel" aria-labelledby="engineer-tab"></div>
+            <div class="tab-pane fade" id="component" role="tabpanel" aria-labelledby="component-tab"></div>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        $(document).ready(function()
-        {
-            get_bu_wise()
-            $('#engineer-tab').click(function(){ get_engineer();});
-            $('#sla-tab').click(function(){ get_sla();});
-            $('#component-tab').click(function(){ get_component();});
-            $('#utilization-tab').click(function(){ get_utilization();});
-            $('#service-issue-tab').click(function(){ get_service_issue_distribution();});
-        }
-    );
-        function get_bu_wise()
-        {
-            $.ajax({
-                    url: '/bu_wise',
-                    type: 'GET',
-                    // data: { service_issue: serviceIssue },
-                    success: function(response) {
-                        $('#bu-wise').html(response);
-                        // $('#breakdownModal').modal('show'); // Show the modal
-                    }
-                });
+        $(document).ready(function() {
+            get_bu_wise();
+            $('#engineer-tab').click(function() { get_engineer(); });
+            $('#sla-tab').click(function() { get_sla(); });
+            $('#component-tab').click(function() { get_component(); });
+            $('#utilization-tab').click(function() { get_utilization(); });
+            $('#service-issue-tab').click(function() { get_service_issue_distribution(); });
+        });
 
-        }function get_engineer() {
+        function get_bu_wise() {
+            $.ajax({
+                url: '/bu_wise',
+                type: 'GET',
+                success: function(response) {
+                    $('#bu-wise').html(response);
+                }
+            });
+        }
+
+        function get_engineer() {
             $.ajax({
                 url: '/engineer',
                 type: 'GET',
@@ -110,7 +158,7 @@
                 }
             });
         }
-   
+
         function get_component() {
             $.ajax({
                 url: '/component',
@@ -129,7 +177,6 @@
                 url: '/utilization',
                 type: 'GET',
                 success: function(data) {
-                    // console.log(data)
                     $('#utilization').html(data);
                 },
                 error: function(error) {
@@ -143,16 +190,13 @@
                 url: '/service_issue_distribution',
                 type: 'GET',
                 success: function(data) {
-                    // console.log(data)
                     $('#service-issue').html(data);
                 },
                 error: function(error) {
-                    console.error('Error fetching servive_issue_distribution data:', error);
+                    console.error('Error fetching service issue distribution data:', error);
                 }
             });
         }
-        
-    
     </script>
 </body>
 </html>

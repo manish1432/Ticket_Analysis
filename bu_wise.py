@@ -60,10 +60,10 @@ def fetch_breakdown_data(service_issue):
 
 # @app.route('/', methods=['GET', 'POST'])
 def get_data(start_date, end_date):
-    triaged_business = request.form.get('triaged_business', 'MPC')  # Default triaged business
+    triaged_business = request.form.get('triaged_business', 'Technicolor Group')  # Default triaged business
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
-    
+    print(triaged_business, start_date, end_date)
     # Fetch ticket data based on triaged business and date range
     data = fetch_ticket_data(triaged_business, start_date, end_date)
     

@@ -1,36 +1,90 @@
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        h1, h2, h3 {
-            text-align: center;
-            margin-top: 20px;
-            color: #343a40;
-        }
-        .form-row {
-            margin-top: 20px;
-        }
-        .btn-primary {
-            width: 100%;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        #ticketChart {
-            margin-top: 30px;
-        }
-        .table-responsive {
-            margin-top: 20px;
-        }
-        .table {
-            animation: fadeIn 1s ease-in-out;
-        }
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-    </style>
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: Arial, sans-serif;
+        color: #343a40;
+        padding-top: 50px;
+    }
+    h1, h2, h3, h5 {
+        text-align: center;
+        margin-top: 20px;
+        color: #343a40;
+        font-weight: bold;
+    }
+    .container {
+        margin-top: 40px;
+        animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .form-row {
+        margin-top: 20px;
+    }
+    .btn-primary {
+        width: 100%;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+    #ticketChart {
+        margin-top: 30px;
+    }
+    .table-responsive {
+        margin-top: 20px;
+        animation: fadeIn 1s ease-in-out;
+    }
+    .table {
+        animation: fadeIn 1s ease-in-out;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .thead-dark th {
+        background-color: #343a40;
+        color: #fff;
+        border-bottom: 2px solid #ddd;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f2f2f2;
+    }
+    .table-striped tbody tr:hover {
+        background-color: #e9ecef;
+    }
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+    .issue-row {
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+    .issue-row:hover {
+        background-color: #e9ecef;
+        transform: scale(1.02);
+    }
+    .modal-content {
+        border-radius: 10px;
+        animation: fadeIn 1s ease-in-out;
+    }
+    .modal-header {
+        background-color: #007bff;
+        color: white;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    .modal-header .close {
+        color: white;
+    }
+    .modal-body {
+        padding: 20px;
+    }
+    .modal-footer {
+        border-top: none;
+    }
+</style>
     
         <h5>Ticket Analysis by Business Unit</h5>
         
@@ -38,10 +92,10 @@
         <!-- <form method="POST" action="/bu_wise"> -->
             <div class="form-row">
                 <div class="col">
-                    <input type="date" id="txt_bu_start_date" class="form-control" name="start_date" placeholder="Start Date">
+                    <input type="date" id="txt_bu_start_date" class="form-control" value="{{ start_date }}" name="start_date" placeholder="Start Date">
                 </div>
                 <div class="col">
-                    <input type="date" id="txt_bu_end_date" class="form-control" name="end_date" placeholder="End Date">
+                    <input type="date" id="txt_bu_end_date" class="form-control" value="{{ end_date }}" name="end_date" placeholder="End Date">
                 </div>
                 <div class="col">
                     <select id = "ddl_bu_tb" class="form-control" name="triaged_business">
@@ -122,7 +176,8 @@
 
             // Handle click on service issue rows to fetch and display breakdown
             $('.issue-row').click(function() {
-                var serviceIssue = $(this).data('service-issue');
+                var serviceIssue = $(this).attr('data-service-issue');
+                console.log(serviceIssue)
                 $.ajax({
                     url: '/bu_breakdown',
                     type: 'POST',
@@ -137,7 +192,6 @@
 
         function apply_bu_filter()
         {
-            debugger
             $.ajax({
                     url: '/bu_wise',
                     type: 'POST',

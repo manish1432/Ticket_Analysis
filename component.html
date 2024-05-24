@@ -40,7 +40,7 @@
         .form-group label {
             font-weight: bold;
         }
-        #plotly-chart {
+        #plotly-chart, #plotly-pie-chart {
             margin-bottom: 40px;
         }
         ul {
@@ -74,11 +74,10 @@
         .btn-primary {
             background-color: #007bff;
             border-color: #007bff;
-            transition: background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
         }
         .btn-primary:hover {
             background-color: #0056b3;
-            border-color: #004085;
+            border-color: #0056b3;
         }
     </style>
 <!-- </head>
@@ -88,13 +87,23 @@
 
         <!-- <form method="POST" action="/component" class="animate__animated animate__zoomIn"> -->
             <div class="form-row">
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-4">
                     <label for="start_date">Start Date:</label>
-                    <input type="date" id="txt_comp_start_date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="Start Date">
+                    <input type="date" id="txt_comp_start_date" name="start_date" value="{{ start_date }}" class="form-control"  placeholder="Start Date">
                 </div>
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-4">
                     <label for="end_date">End Date:</label>
-                    <input type="date" id="txt_comp_end_date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="Start Date">
+                    <input type="date" id="txt_comp_end_date" name="end_date" value="{{ end_date }}" class="form-control"  placeholder="End Date">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="triaged_business">Triaged Business:</label>
+                    <select id="ddl_comp_tb" name="triaged_business" class="form-control">
+                        <option value="All" {% if not triaged_business or triaged_business == 'All' %}selected{% endif %}>All</option>
+                        <option value="MPC" {% if triaged_business == 'MPC' %}selected{% endif %}>MPC</option>
+                        <option value="The Mill" {% if triaged_business == 'The Mill' %}selected{% endif %}>The Mill</option>
+                        <option value="Technicolor Games" {% if triaged_business == 'Technicolor Games' %}selected{% endif %}>Technicolor Games</option>
+                        <option value="Mikros Animation" {% if triaged_business == 'Mikros Animation' %}selected{% endif %}>Mikros Animation</option>
+                    </select>
                 </div>
             </div>
             <button type="submit" onclick="apply_comp_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
@@ -114,6 +123,9 @@
                 <li onclick="fetchComponentDetails('{{ component }}');" class="component-item animate__animated animate__fadeInUp"><strong>{{ component }}:</strong> {{ count }}</li>
             {% endfor %}
         </ul>
+
+        <!-- Pie chart container -->
+        <div id="plotly-pie-chart" class="animate__animated animate__fadeInUp"></div>
     </div>
 
     <!-- Modal to display component details -->
@@ -137,29 +149,33 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
     <script>
-        // Load the Plotly chart from JSON data
+        // Load the Plotly bar chart from JSON data
         var graphJson = {{ graph_json|safe }};
         Plotly.newPlot('plotly-chart', graphJson.data, graphJson.layout, { responsive: true });
+
+        // Load the Plotly pie chart from JSON data
+        var pieGraphJson = {{ pie_graph_json|safe }};
+        Plotly.newPlot('plotly-pie-chart', pieGraphJson.data, pieGraphJson.layout, { responsive: true });
 
         // Function to fetch and display component details in modal
         function fetchComponentDetails(comp) {
             var start_date = $('#txt_comp_start_date').val();
             var end_date = $('#txt_comp_end_date').val();
-            fetch(`/comp_details`,{
+            var triaged_business = $('#ddl_comp_tb').val(); // Changed to #ddl_comp_tb to match the correct ID
+
+            fetch(`/comp_details`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ comp: comp, start_date: start_date, end_date: end_date })
-            }
-           
-            )
+                body: JSON.stringify({ comp: comp, start_date: start_date, end_date: end_date, triaged_business: triaged_business })
+            })
             .then(response => response.json())
             .then(data => {
                 console.log(data);
 
                 // Construct HTML for component details
-                let detailsHtml = '<ul>';
+                let detailsHtml = `<p><strong>Triaged Business:</strong> ${data.triaged_business}</p><ul>`;
                 data.details.forEach(detail => {
                     detailsHtml += `<li><strong>${detail.Detail1}:</strong> ${detail.Count}</li>`;
                 });
@@ -181,7 +197,7 @@
             $.ajax({
                 url: '/component',
                 type: 'POST',
-                    data: { start_date:$('#txt_comp_start_date').val(), end_date:$('#txt_comp_end_date').val()},
+                data: { start_date: $('#txt_comp_start_date').val(), end_date: $('#txt_comp_end_date').val(), triaged_business: $('#ddl_comp_tb').val() },
                 success: function(data) {
                     $('#component').html(data);
                 },

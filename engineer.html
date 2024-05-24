@@ -71,10 +71,10 @@
         <!-- <form method="POST" action="/" class="bg-light p-4 rounded shadow-sm animate__animated animate__zoomIn"> -->
             <div class="form-row">
                 <div class="col">
-                    <input type="date" id="txt_eng_start_date" class="form-control" name="start_date" placeholder="Start Date">
+                    <input type="date" id="txt_eng_start_date" class="form-control" value="{{ start_date }}" name="start_date" placeholder="Start Date">
                 </div>
                 <div class="col">
-                    <input type="date" id="txt_eng_end_date" class="form-control" name="end_date" placeholder="End Date">
+                    <input type="date" id="txt_eng_end_date" class="form-control" value="{{ end_date }}" name="end_date" placeholder="End Date">
                 </div>
                 <div class="col">
                     <button type="submit" onclick="apply_eng_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
