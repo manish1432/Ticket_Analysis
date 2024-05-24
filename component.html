@@ -115,6 +115,9 @@
 
         <div id="plotly-chart" class="animate__animated animate__fadeInUp"></div>
 
+        <!-- Move the Pie chart container here below the bar chart -->
+        <div id="plotly-pie-chart" class="animate__animated animate__fadeInUp"></div>
+
         <p><strong>Total Components:</strong> {{ total_components }}</p>
 
         <h3>Component Totals</h3>
@@ -123,9 +126,6 @@
                 <li onclick="fetchComponentDetails('{{ component }}');" class="component-item animate__animated animate__fadeInUp"><strong>{{ component }}:</strong> {{ count }}</li>
             {% endfor %}
         </ul>
-
-        <!-- Pie chart container -->
-        <div id="plotly-pie-chart" class="animate__animated animate__fadeInUp"></div>
     </div>
 
     <!-- Modal to display component details -->
