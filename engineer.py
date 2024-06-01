@@ -17,7 +17,6 @@ def fetch_ticket_data(start_date=None, end_date=None):
                SUM(CASE WHEN ServiceIssue = 'self-ticket' THEN 1 ELSE 0 END) AS SelfTicketCount
         FROM ServiceDesk
     """
-    params = [start_date, end_date]
     if start_date and end_date:
         start_date_str = start_date.strftime('%Y-%m-%d')
         end_date_str = end_date.strftime('%Y-%m-%d')
@@ -31,22 +30,29 @@ def fetch_ticket_data(start_date=None, end_date=None):
     return df
 
 # Function to fetch service issue breakdown for a specific engineer
-def fetch_engineer_details(engineer_name):
+def fetch_engineer_details(engineer_name, start_date=None, end_date=None):
     conn = sqlite3.connect('io_database.db')
-   
+    
     query = """
         SELECT ServiceIssue, COUNT(*) AS IssueCount
         FROM ServiceDesk
         WHERE Assignee = ?
-        GROUP BY ServiceIssue
     """
+    params = [engineer_name]
     
-    df = pd.read_sql_query(query, conn, params=(engineer_name,))
+    if start_date and end_date:
+        start_date_str = start_date.strftime('%Y-%m-%d')
+        end_date_str = end_date.strftime('%Y-%m-%d')
+        query += f" AND Created BETWEEN '{start_date_str}' AND '{end_date_str}'"
+    
+    query += " GROUP BY ServiceIssue"
+    
+    df = pd.read_sql_query(query, conn, params=params)
     conn.close()
     
     return df
 
-@app.route('/engineer', methods=['GET', 'POST'])
+# @app.route('/engineer', methods=['GET', 'POST'])
 def get_data():
     date_range_label = ""
     start_date = None
@@ -101,16 +107,23 @@ def get_data():
     return render_template('engineer.html', graph_json=graph_json,
                            engineers_data=engineers_data, date_range_label=date_range_label)
 
-# @app.route('/engineer-details', methods=['POST'])
-# def engineer_details():
-#     data = request.get_json()
-#     engineer_name = data['engineerName']
+@app.route('/engineer-details', methods=['POST'])
+def engineer_details():
+    data = request.get_json()
+    start_date = data.get('startDate')
+    end_date = data.get('endDate')
+    engineer_name = data['engineerName']
     
-#     # Fetch engineer details
-#     details_df = fetch_engineer_details(engineer_name)
-#     details_dict = details_df.set_index('ServiceIssue')['IssueCount'].to_dict()
+    # Parse the start and end dates if they are provided
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     
-#     return jsonify(details={'engineerName': engineer_name, 'details': details_dict})
+    # Fetch engineer details with the filtered date range
+    details_df = fetch_engineer_details(engineer_name, start_date, end_date)
+    details_dict = details_df.set_index('ServiceIssue')['IssueCount'].to_dict()
+    
+    return jsonify(details={'engineerName': engineer_name, 'details': details_dict})
 
 if __name__ == '__main__':
     app.run(debug=True)

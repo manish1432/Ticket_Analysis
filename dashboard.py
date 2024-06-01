@@ -73,9 +73,19 @@ def engineer_page():
 @app.route('/engineer-details', methods=['POST'])
 def engineer_details():
     data = request.get_json()
+    start_date = data.get('start_date')
+    end_date = data.get('end_date')
     engineer_name = data['engineerName']
-    details_df = engineer.fetch_engineer_details(engineer_name)
+    
+    # Parse the start and end dates if they are provided
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    
+    # Fetch engineer details with the filtered date range
+    details_df = engineer.fetch_engineer_details(engineer_name, start_date, end_date)
     details_dict = details_df.set_index('ServiceIssue')['IssueCount'].to_dict()
+    
     return jsonify(details={'engineerName': engineer_name, 'details': details_dict})
 
 @app.route('/component', methods=['GET', 'POST'])

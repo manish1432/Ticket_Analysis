@@ -68,19 +68,17 @@
         <h1 class="animate__animated animate__slideInDown">Tickets Assigned to Engineers</h1>
         
         <!-- Date range selection form -->
-        <!-- <form method="POST" action="/" class="bg-light p-4 rounded shadow-sm animate__animated animate__zoomIn"> -->
-            <div class="form-row">
-                <div class="col">
-                    <input type="date" id="txt_eng_start_date" class="form-control" value="{{ start_date }}" name="start_date" placeholder="Start Date">
-                </div>
-                <div class="col">
-                    <input type="date" id="txt_eng_end_date" class="form-control" value="{{ end_date }}" name="end_date" placeholder="End Date">
-                </div>
-                <div class="col">
-                    <button type="submit" onclick="apply_eng_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
-                </div>
+        <div class="form-row">
+            <div class="col">
+                <input type="date" id="txt_eng_start_date" class="form-control" value="{{ start_date }}" name="start_date" placeholder="Start Date">
             </div>
-        <!-- </form> -->
+            <div class="col">
+                <input type="date" id="txt_eng_end_date" class="form-control" value="{{ end_date }}" name="end_date" placeholder="End Date">
+            </div>
+            <div class="col">
+                <button type="submit" onclick="apply_eng_filter()" class="btn btn-primary btn-block animate__animated animate__pulse animate__infinite">Apply Filter</button>
+            </div>
+        </div>
 
         <!-- Display date range label -->
         {% if date_range_label %}
@@ -161,7 +159,7 @@
             $.ajax({
                 url: '/engineer',
                 type: 'POST',
-                    data: { start_date:$('#txt_eng_start_date').val(), end_date:$('#txt_eng_end_date').val()},
+                data: { start_date: $('#txt_eng_start_date').val(), end_date: $('#txt_eng_end_date').val() },
                 success: function(data) {
                     $('#engineer').html(data);
                 },
@@ -177,7 +175,6 @@
         Plotly.newPlot('ticketChart', figure.data, figure.layout);
     </script>
 
-    <!-- Bootstrap and jQuery scripts
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
 <!-- </body>
 </html> -->
